@@ -5,8 +5,6 @@
 -->
 # Table of Contents
 
-TODO to be updated
-
 * [Introduction](#introduction)
 * [Reflection in a nutshell](#reflection-in-a-nutshell)
 * [Any as in any type](#any-as-in-any-type)
@@ -170,10 +168,6 @@ meta type of the contained value, if any. The member functions `can_cast` and
 base or if it can be converted implicitly to it. Similarly, `cast` and `convert`
 do what they promise and return the expected value.
 
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-TODO
-
 # Enjoy the runtime
 
 Once the web of reflected types has been constructed, it's a matter of using it
@@ -193,37 +187,122 @@ auto *by_type = entt::resolve<my_type>();
 auto *by_name = entt::resolve("reflected_type");
 ```
 
-The returned value is a pointer to a `meta_type` object. This type of objects
-offer a series of useful tools to know the name, to iterate all the meta
-objects associated with them and even to build or destroy instances of the
-underlying type.<br/>
-Refer to the inline documentation for all the details.
-
-Once someone has a meta-type, meta data and meta functions can be easily
-retrieved by means of two member functions: `data` and `func`. In both cases,
-members are searched by name:
+There exits also a third overload of the `resolve` function to use to iterate
+all the reflected types at once:
 
 ```cpp
-auto *data = entt::resolve<my_type>().data("cvalue")
-auto *func = entt::resolve<my_type>().func("cfunc")
+resolve([](auto *type) {
+    // ...
+});
 ```
 
-Meta data offer a set of member functions including methods to know the name, to
-get the meta type of the underlying variable, to set and get the value of the
-actual variable and so on.<br/>
-Meta functions offer a slightly different set of member functions, among them
-methods to know the meta type associated to the returnr type, to retrieve the
-meta types of the arguments, to invoke the underlying function and so on.<br/>
+In all cases, the returned value is a pointer to a `meta_type` object. This type
+of objects offer an API to know the _runtime name_ of the type, to iterate all
+the meta objects associated with them and even to build or destroy instances of
+the underlying type.<br/>
 Refer to the inline documentation for all the details.
 
-Similarly, constructors can also be retrieved (by argument list) as well as the
-destructor associated with the meta type. As for the other meta objects, also in
-this case we have a set of tools to invoke and explore constructors and
-destructors in all their parts.
+The meta objects that compose a meta type are accessed in the following ways:
 
-Finally, meta types and meta objects in general contain much more than what is
-said: a plethora of functions in addition to those listed whose purposes and
-uses go unfortunately beyond the scope of this document.<br/>
+* _Meta constructors_. They are accessed by types of arguments:
+
+  ```cpp
+  auto *ctor = entt::resolve<my_type>().ctor<int, char>();
+  ```
+
+  The returned type is `meta_ctor *` and may be null if there is no constructor
+  that accepts the supplied arguments or at least some types from which they are
+  derived or to which they can be converted.<br/>
+  A meta constructor offers an API to know the number of arguments, the expected
+  meta types and to invoke it, therefore to construct a new instance of the
+  underlying type.
+
+* _Meta destructor_. It's returned by a dedicated function:
+
+  ```cpp
+  auto *dtor = entt::resolve<my_type>().dtor();
+  ```
+
+  The returned type is `meta_dtor *` and may be null if there is no custom
+  destructor set for the gven meta type.<br/>
+  All what a meta destructor has to offer is a way to invoke it on a given
+  instance. Be aware that the result may not be what is expected.
+
+* _Meta data_. They are accessed by name:
+
+  ```cpp
+  auto *data = entt::resolve<my_type>().data("member");
+  ```
+
+  The returned type is `meta_data *` and may be null if there is no meta data
+  object associated with the given name.<br/>
+  A meta data object offers an API to query the underlying type (ie to know if
+  it's a const or a static one), to get the meta type of the variable and to set
+  or get the contained value.
+
+* _Meta functions_. They are accessed by name:
+
+  ```cpp
+  auto *func = entt::resolve<my_type>().func("member");
+  ```
+
+  The returned type is `meta_func *` and may be null if there is no meta
+  function object associated with the given name.<br/>
+  A meta function object offers an API to query the underlying type (ie to know
+  if it's a const or a static function), to know the number of arguments, the
+  meta return type and the meta types of the parameters. In addition, a meta
+  function object can be used to invoke the underlying function and then get the
+  return value in the form of meta any object.
+
+
+* _Meta bases_. They are accessed through the name of the base types:
+
+  ```cpp
+  auto *base = entt::resolve<derived_type>().base("base");
+  ```
+
+  The returned type is `meta_base *` and may be null if there is no meta base
+  object associated with the given name.<br/>
+  Meta bases aren't meant to be used directly, even though they are freely
+  accessible. They expose only a few methods to use to know the meta type of the
+  base class and to convert a raw pointer between types.
+
+* _Meta conversion functions_. They are accessed by type:
+
+  ```cpp
+  auto *conv = entt::resolve<double>().conv<int>();
+  ```
+
+  The returned type is `meta_conv *` and may be null if there is no meta
+  conversion function associated with the given type.<br/>
+  The meta conversion functions are as thin as the meta bases and with a very
+  similar interface. The sole difference is that they return a newly created
+  instance wrapped in a meta any object when they convert between different
+  types.
+
+Furthermore, all meta objects with the exception of meta destructors can be
+iterated through an overload that accepts a callback through which to return
+them. As an example:
+
+```cpp
+entt::resolve<my_type>().data([](auto *data) {
+    // ...
+});
+```
+
+A meta type can also be used to `construct` or `destroy` actual instances of the
+underlying type.<br/>
+In particular, the `construct` member function accepts a variable number of
+arguments and searches for a match. It returns a `meta_any` object that may or
+may not be initialized, depending on whether a suitable constructor has been
+found or not. On the other side, the `destroy` member function accepts instances
+of `meta_any` as well as actual objects by reference and invokes the registered
+destructor if any or a default one.<br/>
+Be aware that the result of a call to `destroy` may not be what is expected.
+
+Meta types and meta objects in general contain much more than what is said: a
+plethora of functions in addition to those listed whose purposes and uses go
+unfortunately beyond the scope of this document.<br/>
 I invite anyone interested in the subject to look at the code, experiment and
 read the official documentation to get the best out of this powerful tool.
 
@@ -231,22 +310,25 @@ read the official documentation to get the best out of this powerful tool.
 
 Sometimes (ie when it comes to creating an editor) it might be useful to be able
 to attach properties to the meta objects created. Fortunately, this is possible
-for all of them.<br/>
-To attach a property to a meta object, no matter what, it is sufficient to
-provide an object at the time of construction such that `std::get<0>` and
-`std::get<1>` are valid for it. In other terms, the properties are nothing more
-than key/value pairs users can put in an `std::pair`. As an example:
+for most of them.<br/>
+To attach a property to a meta object, no matter what as long as it supports
+properties, it is sufficient to provide an object at the time of construction
+such that `std::get<0>` and `std::get<1>` are valid for it. In other terms, the
+properties are nothing more than key/value pairs users can put in an
+`std::pair`. As an example:
 
 ```cpp
-entt::reflect<my_type>("reflected_type", std::make_pair("tooltip"_hs, "message"));
+entt::reflect<my_type>("reflected", std::make_pair("tooltip"_hs, "message"));
 ```
 
-All the meta objects offer then a couple of member functions named `prop` to
-iterate all the properties at once and to search a specific property by key:
+The meta objects that support properties offer then a couple of member functions
+named `prop` to iterate them at once and to search a specific property by key:
 
 ```cpp
 // iterate all the properties of a meta type
-entt::resolve<my_type>().prop([](auto *prop) { /* ... */ });
+entt::resolve<my_type>().prop([](auto *prop) {
+    // ...
+});
 
 // search for a given property by name
 auto *prop = entt::resolve<my_type>().prop("tooltip"_hs);

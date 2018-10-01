@@ -84,7 +84,7 @@ class meta_factory {
     }
 
     template<typename... Property>
-    meta_factory<Type> clazz(hashed_string name, Property &&... property) ENTT_NOEXCEPT {
+    meta_factory<Type> type(hashed_string name, Property &&... property) ENTT_NOEXCEPT {
         static internal::meta_type_node node{
             name,
             internal::meta_info<>::type,
@@ -405,7 +405,7 @@ public:
  */
 template<typename Type, typename... Property>
 inline meta_factory<Type> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT {
-    return meta_factory<Type>{}.clazz(hashed_string{str}, std::forward<Property>(property)...);
+    return meta_factory<Type>{}.type(hashed_string{str}, std::forward<Property>(property)...);
 }
 
 
