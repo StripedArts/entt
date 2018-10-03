@@ -118,7 +118,7 @@ meta_func_node * meta_node<Type>::func = nullptr;
 
 
 template<typename... Type>
-struct meta_info: meta_node<std::decay_t<Type>...> {};
+struct meta_info: meta_node<std::remove_cv_t<std::remove_reference_t<Type>>...> {};
 
 
 struct meta_prop_node final {
@@ -200,6 +200,16 @@ struct meta_type_node final {
     const hashed_string name;
     meta_type_node * const next;
     meta_prop_node * const prop;
+    const bool is_void;
+    const bool is_enum;
+    const bool is_class;
+    const bool is_pointer;
+    const bool is_function_pointer;
+    const bool is_member_object_pointer;
+    const bool is_member_function_pointer;
+    const bool is_member_pointer;
+    const bool is_arithmetic;
+    const bool is_compound;
     bool(* const destroy)(meta_handle);
     meta_type *(* const meta)();
     meta_base_node *base;
@@ -1346,6 +1356,97 @@ public:
     }
 
     /**
+     * @brief Indicates whether a given meta type refers to void or not.
+     * @return True if the underlying type is void, false otherwise.
+     */
+    inline bool is_void() const ENTT_NOEXCEPT {
+        return node->is_void;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to an enum or not.
+     * @return True if the underlying type is an enum, false otherwise.
+     */
+    inline bool is_enum() const ENTT_NOEXCEPT {
+        return node->is_enum;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a class or not.
+     * @return True if the underlying type is a class, false otherwise.
+     */
+    inline bool is_class() const ENTT_NOEXCEPT {
+        return node->is_class;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a pointer or not.
+     * @return True if the underlying type is a pointer, false otherwise.
+     */
+    inline bool is_pointer() const ENTT_NOEXCEPT {
+        return node->is_pointer;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a function pointer
+     * or not.
+     * @return True if the underlying type is a function pointer, false
+     * otherwise.
+     */
+    inline bool is_function_pointer() const ENTT_NOEXCEPT {
+        return node->is_function_pointer;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a pointer to data
+     * member or not.
+     * @return True if the underlying type is a pointer to data member, false
+     * otherwise.
+     */
+    inline bool is_member_object_pointer() const ENTT_NOEXCEPT {
+        return node->is_member_object_pointer;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a pointer to member
+     * function or not.
+     * @return True if the underlying type is a pointer to member function,
+     * false otherwise.
+     */
+    inline bool is_member_function_pointer() const ENTT_NOEXCEPT {
+        return node->is_member_function_pointer;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a pointer to member
+     * or not.
+     * @return True if the underlying type is a pointer to member, false
+     * otherwise.
+     */
+    inline bool is_member_pointer() const ENTT_NOEXCEPT {
+        return node->is_member_pointer;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to an arithmetic type
+     * or not.
+     * @return True if the underlying type is an arithmetic type, false
+     * otherwise.
+     */
+    inline bool is_arithmetic() const ENTT_NOEXCEPT {
+        return node->is_arithmetic;
+    }
+
+    /**
+     * @brief Indicates whether a given meta type refers to a compound type or
+     * not.
+     * @return True if the underlying type is a compound type, false otherwise.
+     */
+    inline bool is_compound() const ENTT_NOEXCEPT {
+        return node->is_compound;
+    }
+
+    /**
      * @brief Iterates all the meta base of a meta type.
      *
      * Iteratively returns **all** the base classes of the given type.
@@ -1747,11 +1848,23 @@ invoke(meta_handle &handle, meta_any *args, std::index_sequence<Indexes...>) {
 
 template<typename Type>
 meta_type_node * meta_node<Type>::resolve() ENTT_NOEXCEPT {
+    static_assert((std::is_scalar_v<Type> || std::is_class_v<Type> || std::is_void_v<Type>) && !std::is_const_v<Type>);
+
     if(!type) {
         static meta_type_node node{
             {},
             nullptr,
             nullptr,
+            std::is_void_v<Type>,
+            std::is_enum_v<Type>,
+            std::is_class_v<Type>,
+            std::is_pointer_v<Type>,
+            std::is_pointer_v<Type> && std::is_function_v<std::remove_pointer_t<Type>>,
+            std::is_member_object_pointer_v<Type>,
+            std::is_member_function_pointer_v<Type>,
+            std::is_member_pointer_v<Type>,
+            std::is_arithmetic_v<Type>,
+            std::is_compound_v<Type>,
             &destroy<Type>,
             []() {
                 static meta_type meta{&node};

@@ -18,7 +18,7 @@ class meta_factory;
 
 
 template<typename Type, typename... Property>
-meta_factory<Type> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
+auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
 
 
 /**
@@ -33,6 +33,8 @@ meta_factory<Type> reflect(const char *str, Property &&... property) ENTT_NOEXCE
  */
 template<typename Type>
 class meta_factory {
+    static_assert((std::is_scalar_v<Type> || std::is_class_v<Type>) && !std::is_const_v<Type>);
+
     template<auto Data>
     static std::enable_if_t<std::is_member_object_pointer_v<decltype(Data)>, decltype(std::declval<Type>().*Data)>
     actual_type();
@@ -89,6 +91,16 @@ class meta_factory {
             name,
             internal::meta_info<>::type,
             properties<Type>(std::forward<Property>(property)...),
+            std::is_void_v<Type>,
+            std::is_enum_v<Type>,
+            std::is_class_v<Type>,
+            std::is_pointer_v<Type>,
+            std::is_pointer_v<Type> && std::is_function_v<std::remove_pointer_t<Type>>,
+            std::is_member_object_pointer_v<Type>,
+            std::is_member_function_pointer_v<Type>,
+            std::is_member_pointer_v<Type>,
+            std::is_arithmetic_v<Type>,
+            std::is_compound_v<Type>,
             &internal::destroy<Type>,
             []() {
                 static meta_type meta{&node};
@@ -385,7 +397,7 @@ public:
     }
 
     template<typename Other, typename... Property>
-    friend meta_factory<Other> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
+    friend auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
 };
 
 
@@ -404,8 +416,8 @@ public:
  * @return A meta factory for the given type.
  */
 template<typename Type, typename... Property>
-inline meta_factory<Type> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT {
-    return meta_factory<Type>{}.type(hashed_string{str}, std::forward<Property>(property)...);
+inline auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT {
+    return meta_factory<std::remove_cv_t<std::remove_reference_t<Type>>>{}.type(hashed_string{str}, std::forward<Property>(property)...);
 }
 
 
@@ -421,8 +433,8 @@ inline meta_factory<Type> reflect(const char *str, Property &&... property) ENTT
  * @return A meta factory for the given type.
  */
 template<typename Type>
-inline meta_factory<Type> reflect() ENTT_NOEXCEPT {
-    return meta_factory<Type>{};
+inline auto reflect() ENTT_NOEXCEPT {
+    return meta_factory<std::remove_cv_t<std::remove_reference_t<Type>>>{};
 }
 
 

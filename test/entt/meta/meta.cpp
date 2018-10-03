@@ -1093,6 +1093,19 @@ TEST_F(Meta, MetaType) {
     ASSERT_EQ(prop->value(), 99);
 }
 
+TEST_F(Meta, MetaTypeTraits) {
+    ASSERT_TRUE(entt::resolve<void>()->is_void());
+    ASSERT_TRUE(entt::resolve<properties>()->is_enum());
+    ASSERT_TRUE(entt::resolve<derived_type>()->is_class());
+    ASSERT_TRUE(entt::resolve<int *>()->is_pointer());
+    ASSERT_TRUE(entt::resolve<decltype(&empty_type::destroy)>()->is_function_pointer());
+    ASSERT_TRUE(entt::resolve<decltype(&data_type::i)>()->is_member_object_pointer());
+    ASSERT_TRUE(entt::resolve<decltype(&func_type::g)>()->is_member_function_pointer());
+    ASSERT_TRUE(entt::resolve<decltype(&data_type::j)>()->is_member_pointer());
+    ASSERT_TRUE(entt::resolve<bool>()->is_arithmetic());
+    ASSERT_TRUE(entt::resolve<properties>()->is_compound());
+}
+
 TEST_F(Meta, MetaTypeBase) {
     auto *type = entt::resolve<derived_type>();
     bool iterate = false;
