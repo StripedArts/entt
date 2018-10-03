@@ -18,7 +18,7 @@ class meta_factory;
 
 
 template<typename Type, typename... Property>
-auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
+meta_factory<Type> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
 
 
 /**
@@ -397,7 +397,7 @@ public:
     }
 
     template<typename Other, typename... Property>
-    friend auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
+    friend meta_factory<Other> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT;
 };
 
 
@@ -416,8 +416,8 @@ public:
  * @return A meta factory for the given type.
  */
 template<typename Type, typename... Property>
-inline auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT {
-    return meta_factory<std::remove_cv_t<std::remove_reference_t<Type>>>{}.type(hashed_string{str}, std::forward<Property>(property)...);
+inline meta_factory<Type> reflect(const char *str, Property &&... property) ENTT_NOEXCEPT {
+    return meta_factory<Type>{}.type(hashed_string{str}, std::forward<Property>(property)...);
 }
 
 
@@ -433,8 +433,8 @@ inline auto reflect(const char *str, Property &&... property) ENTT_NOEXCEPT {
  * @return A meta factory for the given type.
  */
 template<typename Type>
-inline auto reflect() ENTT_NOEXCEPT {
-    return meta_factory<std::remove_cv_t<std::remove_reference_t<Type>>>{};
+inline meta_factory<Type> reflect() ENTT_NOEXCEPT {
+    return meta_factory<Type>{};
 }
 
 
